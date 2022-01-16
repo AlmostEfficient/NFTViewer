@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
 import styles from '../styles/Home.module.css'
-import { Box, Input, Flex, Button } from '@chakra-ui/react'
+import { Box, Input, Flex, Button, Heading, Textarea } from '@chakra-ui/react'
 import Header from '../components/Header'
 import Networks from '../components/Networks'
 import web3 from 'web3';
 import {networkIds} from '../src/utils';
+import 'highlight.js/styles/default.css';
+import hljs from 'highlight.js';
+import json from 'highlight.js/lib/languages/json';
+hljs.registerLanguage('json', json);
 
 import {
   useNumberInput,
@@ -14,49 +18,96 @@ import {
 } from '@chakra-ui/react'
 
 const placeholder = 'https://lh3.googleusercontent.com/MAhW5Sis-EpanPyVxqxAwJWuU2SahGmcyCjI7TtldcdtGJ1JC8GXhSA0rjqX-neUcCW12LZTO2ZySjD6yWY6WATFx-Fq9MNo4TE9qw'
-const apiKey = 'temp';
+const apiKey = process.env.NEXT_PUBLIC_API_KEY;
 
 export default function Home() {
-  const [contract, setContract] = useState('')
+  const [contract, setContract] = useState('0xf4088a95621e2c22d0be1063e517e14f71392ef1')
   const [id, setId] = useState('')
   const [network, setNetwork] = useState('kovan')
   const [img , setImg] = useState(placeholder)
-  const [response, setResponse] = useState('')
+  const [response, setResponse] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [metadata, setMetadata] = useState(null)
 
+  useEffect(() => {
+    hljs.highlightAll();
+  }, []);
+  
   const handleAddressChange = (e) => {
     web3.utils.isAddress(e.target.value) ? setContract(e.target.value) : setContract('')
     console.log("Address set to: " + e.target.value)
   }
 
   const getMetadata = () => {
+    setLoading(true);
     // Build endpoint from contract address, network, id and api key
     const nId = networkIds[network];
     const endpoint = `https://api.covalenthq.com/v1/${nId}/tokens/${contract}/nft_metadata/${id}/?key=${apiKey}`
     
+    if ( contract === '' || !contract || !id || id === '' || !apiKey) return;
+
     try{
       fetch(endpoint)
-        .then(res => res.json())
-        .then(data => {
-          console.log(data)
-          // Pull attributes and image url
-          // const attributes = data.data.items[0].nftData[0].
-          const item = data.data.items[0]
-          const metadata = item.nft_data[0].token_url;
-          const name = item.contract_name;
-          const ticker = item.contract_ticker_symbol;
-          const description = item.nft_data[0].external_data.description;
-          const attributes = item.nft_data[0].external_data.attributes;
-          console.log("image: ", metadata)
-          console.log("name: ", name)
-          console.log("ticker: ", ticker)
-          console.log("description: ", description)
-          console.log("attributes: ", attributes)
-  
-        });
+				.then((res) => res.json())
+				.then((data) => {
+					setResponse(data);
+					console.log(data);
+					const item = data.data.items[0];
+					const uri = item.nft_data[0].token_url;
+					const name = item.contract_name;
+					const ticker = item.contract_ticker_symbol;
+					const description = item.nft_data[0].external_data.description;
+					const attributes = item.nft_data[0].external_data.attributes;
+          setMetadata({
+            name,
+            ticker,
+            uri,
+            description,
+            attributes
+          })
+          // If the URI is a base64 string
+          if (uri.includes('base64')) {
+            console.log('Base64 detected')
+            // Strip and decode
+            const base64 = uri.split('base64,')[1];
+            const decoded = atob(base64);
+            console.log(decoded)
+            const parsed  = JSON.parse(decoded);
+            setImg(parsed.image);
+          }
+
+          // If the URI is a URL 
+          if (uri.includes('http')) {
+            console.log('URL detected')
+            // Fetch JSON from url
+            fetch(uri)
+              .then((res) => res.json())
+              .then((data) => {
+                setImg(data.image);
+              })
+          }
+
+          // Check if the URI is a URL to a json file
+          if (uri.includes('json')) {
+            console.log('Json detected')
+            const parsed = JSON.parse(uri);
+            setImg(parsed.image)
+          }
+				});
     } catch(err) {
       console.log(err)
     }
+
+    setLoading(false);
+  }
+
+  const copyURI = () => {
+    const el = document.createElement('textarea');
+    el.value = metadata.uri;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
   }
 
   function HookUsage() {
@@ -88,49 +139,78 @@ export default function Home() {
         <title>Testnet NFT viewer</title>
         <meta name="description" content="A better NFT viewer for EVM testnets" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔍</text></svg>"/>
+        <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.3.2/build/styles/default.min.css"></link>
       </Head>
 
       <Header />
-
 
       <Flex justifyContent='center' alignItems='center' flexDirection='column' mt={8}>
         <Networks Network={network} selectNetwork={setNetwork} />
         <Flex mt={6} flexDirection={'row'} alignItems='center' >
           <Input size='lg' w={80} placeholder='Paste contract address' onChange={handleAddressChange} value={contract} />
 
-          {/* <NumberInput size='lg' mx={4}w={24} >
-            <NumberInputField placeholder='Enter ID' onChange={handleIdChange} value={id}/>
-            <NumberInputStepper>
-              <NumberIncrementStepper />
-              <NumberDecrementStepper />
-            </NumberInputStepper>
-          </NumberInput> */}
           <Box mx={5}>
             <HookUsage />
           </Box>
 
           <Box >
-            <Button variantColor='blue' size='lg' onClick={() => getMetadata()}>Refresh</Button>
+            <Button variantColor='blue' size='lg' disabled={loading} onClick={() => getMetadata()}>Fetch</Button>
+            <Button variantColor='blue' size='lg' ml='4' disabled={metadata} onClick={() => copyURI()}>Copy URI</Button>
           </Box>
         </Flex>
         
       </Flex>
       
       <main className={styles.main}>
-        {/* Two boxes side by side inside a flexbox, one for an image, another for a Prism.js code block */}
-        <Flex>
-          <Box>
+        <Flex minW={'80%'} justifyContent={'center'} alignItems='center' >
+          <Box mx='6'>
             <Image src={img} alt='NFT' width={300} height={300} />
           </Box>
+
           <Box>
-            <pre>
+            <Box border={'2px'} borderColor={'black'} borderRadius={'5px'}>
+              <textarea
+                placeholder='Metadata will appear here'
+                minW={'80%'}
+                isReadOnly={true} 
+                size={'lg'}  
+                cols={'50'}
+                rows={'10'}
+                fontSize={'18px'}
+                readOnly={true}
+                font={'monospace'}
+                value={ metadata ? JSON.stringify(metadata, null, 2) : ''}
+              >
+              </textarea>
+            </Box>
+            {/* <pre>
               <code>
                 {`
-                  import { Input } from '@chakra-ui/react'
+                  ${metadata ? JSON.stringify(metadata, null, 2) : 'Metadata will appear here'}
                   `}
               </code>
-            </pre>
+            </pre> */}
           </Box>
+        </Flex>
+
+        <Flex justifyContent='center' alignItems='center' flexDirection='column' maxW={'80vw'} mt={8}>
+
+          {response && 
+            <Box maxWidth={'80vw'}>
+              <Box w='90vw'>
+                <Heading as='h3' size='lg' mb={2}>
+                  Raw response
+                </Heading>
+              </Box>
+              <pre>
+                <code className="json">
+                  {`
+                  ${JSON.stringify(response, null, 2)}
+                  `}
+                </code>
+              </pre>
+            </Box>
+          }
         </Flex>
 
       </main>
@@ -141,7 +221,7 @@ export default function Home() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Made by Raza
+          @AlmostEfficient
         </a>
       </footer>
     </div>
