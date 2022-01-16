@@ -3,7 +3,7 @@ import { Box, Stack, Radio, RadioGroup } from '@chakra-ui/react'
 export default function Networks({ Network, selectNetwork }) {
   const handleChange = (e) => {
     selectNetwork(e)
-    console.log("Network set to: " + Network)
+    console.log("Network set to: " + e)
   }
 
   return (
@@ -11,6 +11,7 @@ export default function Networks({ Network, selectNetwork }) {
       <RadioGroup size='lg' onChange={handleChange} value={Network} defaultValue="Kovan">
         <Stack direction='row'>
           <Radio value="kovan">Ethereum Kovan</Radio>
+          <Radio value="fuji">Avalanche Fuji</Radio>
           <Radio value="mumbai">Matic Mumbai</Radio>
           <Radio value="bsc">BSC Testnet</Radio>
           <Radio value="arbitrum">Arbitrum Testnet</Radio>
