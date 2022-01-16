@@ -139,6 +139,7 @@ export default function Home() {
 					getMetadata={getMetadata}
 					loading={loading}
           copyURI={copyURI}
+          metadata={metadata}
 				/>
 
 			</Flex>
@@ -152,7 +153,7 @@ export default function Home() {
           <Box>
             <Box border={'2px'} borderColor={'black'} borderRadius={'5px'}>
               <textarea
-                placeholder='Metadata will appear here'
+                placeholder='Metadata will appear here. Default contract address is published on Kovan and Fuji. Use ID 0/1'
 								size={'lg'}
                 cols={'50'}
                 rows={'10'}
