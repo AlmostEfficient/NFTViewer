@@ -1,5 +1,5 @@
 // Import Chakra-ui components for a plain header with no buttons
-import { Box, Image } from '@chakra-ui/react'
+import { Box } from '@chakra-ui/react'
 
 export default function Header() {
   return (
@@ -13,11 +13,11 @@ export default function Header() {
           <Box textColor={'white'} mr='20'>
             Powered by
             <a
-              href="https://www.covalenthq.com/"
+              href="https://www.buildspace.so"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Image src={'https://www.covalenthq.com/static/images/covalent-logo-tri.svg'} alt='NFT' width={100} height={10} />
+              <div> <strong> 🦄 Buildspace </strong> </div>
             </a>
           </Box>
         </Box>
