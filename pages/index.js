@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
 import styles from '../styles/Home.module.css'
-import { Box, Input, Flex, Button, Heading } from '@chakra-ui/react'
+import { Box, Input, Flex, Button, Heading, useColorModeValue,  } from '@chakra-ui/react'
 import Header from '../components/Header'
 import Networks from '../components/Networks'
 import Inputs from '../components/Inputs'
@@ -115,7 +115,7 @@ export default function Home() {
     document.body.removeChild(el);
   }
 
-
+  const formBackground = useColorModeValue("gray.100", "gray.700");
 
   return (
 		<div className={styles.root}>
@@ -127,7 +127,6 @@ export default function Home() {
 			</Head>
 
 			<Header />
-
       <Flex justifyContent='center' alignItems='center' flexDirection='column' mt={8}>
         <Networks Network={network} selectNetwork={setNetwork} />
 
