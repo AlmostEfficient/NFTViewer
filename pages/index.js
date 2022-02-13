@@ -116,7 +116,6 @@ export default function Home() {
   }
 
 
-
   return (
 		<div className={styles.root}>
 			<Head>
@@ -127,7 +126,6 @@ export default function Home() {
 			</Head>
 
 			<Header />
-
       <Flex justifyContent='center' alignItems='center' flexDirection='column' mt={8}>
         <Networks Network={network} selectNetwork={setNetwork} />
 
